@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Invoice & Client Metadata Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #d3d3d3; font-family: sans-serif; margin: 20px; }
+        .card { background-color: #005662; color: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .auth-bar { background-color: #111; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; color: #FFF; border: 2px dashed #F1C40F; }
+        .boxfieldset { border: solid #005662 5px; max-width: 1200px; margin: 0 auto; background-color: #00838f; padding: 20px; border-radius: 8px;}
+        .flex-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .flex-child { flex: 1; min-width: 300px; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0 15px 0; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #F1C40F; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.3s; }
+        button:hover { background-color: #d4ac0d; }
+        .item-box { border: 2px solid #008ECC; padding: 15px; margin-bottom: 10px; background-color: #005662; border-radius: 6px; }
+        .app-workspace { opacity: 0.4; pointer-events: none; transition: 0.4s; }
+        .app-active { opacity: 1; pointer-events: auto; }
+    </style>
+</head>
+<body>
+
+<div class="boxfieldset">
+    <div class="auth-bar">
+        <label for="secretSuffix" style="font-weight: bold; color: #F1C40F;">🔑 Enter Shared Secret Suffix to Unlock Database Sync:</label>
+        <div style="display: flex; gap: 10px; max-width: 500px; margin: 10px auto 0 auto;">
+            <input type="password" id="secretSuffix" placeholder="Paste or type secret suffix here..." style="margin:0;">
+            <button type="button" style="background-color: #2ECC71; color: white; padding: 0 20px;" onclick="initializeSecureConnection()">Connect</button>
+        </div>
+    </div>
+
+    <h2 style="color: white; text-align: center; margin-top: 0;">PRO-INVOICE GENERATOR WITH CUSTOMER STORAGE</h2>
+    
+    <div id="workspace" class="app-workspace">
+        <div class="flex-container">
+            <div class="flex-child card">
+                <h3>1. CUSTOMER METADATA PROFILE</h3>
+                <label for="customerSelect"><b>Saved Profiles (Auto-fills Data):</b></label>
+                <select id="customerSelect" onchange="autoFillCustomerMetadata()">
+                    <option value="">-- Select or Start Typing a Saved Customer --</option>
+                </select>
+                <hr>
+                
+                <form id="billingForm">
+                    <label>Billed To (Company Name):</label>
+                    <input type="text" id="billto" required placeholder="e.g. Acme Corp">
+
+                    <label>Address:</label>
+                    <input type="text" id="address" placeholder="Billing Address">
+
+                    <label>GSTIN:</label>
+                    <input type="text" id="gstin" placeholder="GST Registration ID">
+
+                    <label>State:</label>
+                    <input type="text" id="state" placeholder="State">
+
+                    <label>State Code:</label>
+                    <input type="number" id="statecode" placeholder="Code">
+                    
+                    <button type="button" style="background-color: #2ECC71; color: white;" onclick="saveCurrentCustomerMetadata()">
+                        💾 Save / Update Customer Profile
+                    </button>
+                </form>
+            </div>
+
+            <div class="flex-child card">
+                <h3>2. INVOICE META VALUES</h3>
+                <label>Invoice Number:</label>
+                <input type="text" id="invno" value="INV-2026-001">
+                
+                <label>Date of Issue:</label>
+                <input type="date" id="invdate">
+                
+                <label>Challan No:</label>
+                <input type="text" id="chalno" value="0">
+                
+                <label>Transport / Extra Charges:</label>
+                <input type="number" id="otherchg" value="0" step="0.01">
+                
+                <div style="margin: 15px 0;">
+                    <input type="checkbox" id="igstq" style="width:auto; height:auto;"> Apply IGST (18%)<br>
+                    <input type="checkbox" id="cgstsgstq" style="width:auto; height:auto;"> Apply CGST + SGST (9% + 9%)
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>3. INVOICE LINE ITEMS</h3>
+            <div id="itemsContainer"></div>
+            <button type="button" onclick="addInvoiceItemRow()">➕ Add New Line Item</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button type="button" style="background-color: #E74C3C; color: white; padding: 15px 40px; font-size: 18px;" onclick="generateInvoicePDF()">
+                ⚙️ GENERATE SECURE INVOICE PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="index.js"></script>
+</body>
+</html>
